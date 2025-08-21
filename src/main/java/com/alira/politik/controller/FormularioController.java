@@ -8,7 +8,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.alira.politik.dto.CadastroDTO;
 import com.alira.politik.service.EmailService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -17,20 +19,23 @@ import org.springframework.web.bind.annotation.PostMapping;
 @RequestMapping("api/cadastro")
 public class FormularioController {
     private final EmailService emailService;
+    private final ObjectMapper objectMapper;
 
-    public FormularioController(EmailService emailService){
+    public FormularioController(EmailService emailService, ObjectMapper objectMapper){
         this.emailService = emailService;
+        this.objectMapper = objectMapper;
     }
 
-    @PostMapping("/solicitar-cadastro")
+    @PostMapping(value = "/solicitar-cadastro", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<String> solicitarCadastro(
-        @RequestPart("dados") CadastroDTO dados,
+        @RequestPart("dados") String dadosJson,
         @RequestParam("foto-identidade") MultipartFile identidade,
         @RequestParam("foto-comprovante-residencia") MultipartFile residencia,
         @RequestParam("documento-aplicacao") MultipartFile aplicacao
 
     ) {
         try {
+            CadastroDTO dados = objectMapper.readValue(dadosJson, CadastroDTO.class);
             emailService.enviarEmail(dados, identidade, residencia, aplicacao);
             return ResponseEntity.ok("Formulário enviado com sucesso!");
         } catch (Exception e) {
